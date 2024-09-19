@@ -10,7 +10,8 @@ import GoldLoanMaster from './MasterComponents/GoldLoanMaster';
 import FDMaster from './MasterComponents/FDMaster';
 import RDMaster from './MasterComponents/RDMaster';
 import RePledgers from './MasterComponents/RePledgers';
-
+import Coustomers from './pages/Coustomers';
+import GoldLoan from './pages/GoldLoan';
 const App = () => {
   return (
     <Router>
@@ -22,12 +23,15 @@ const App = () => {
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/master" element={<Master/>} />
+              <Route path="/customers" element={<Coustomers/>} />
+              <Route path="/gold-loan" element={<GoldLoan/>} />
               <Route path="/jewel-master" element={<JewelMaster />} />
               <Route path="/supporting-documents" element={<SupportingDocuments />} />
               <Route path="/gold-loan-master" element={<GoldLoanMaster />} />
               <Route path="/fd-master" element={<FDMaster />} />
               <Route path="/rd-master" element={<RDMaster />} />
               <Route path="/re-pledgers" element={<RePledgers />} />
+              
             </Routes>
           </main>
         </div>

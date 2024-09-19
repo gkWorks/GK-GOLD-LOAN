@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { FaTachometerAlt, FaBox } from 'react-icons/fa';
+import { FaTachometerAlt, FaBox, FaUser, FaMoneyBill } from 'react-icons/fa';
 
 const Sidebar = () => {
   return (
@@ -30,6 +30,28 @@ const Sidebar = () => {
           >
             <FaBox className="mr-3 text-xl" />
             <span className="text-lg font-semibold">Master</span>
+          </NavLink>
+        </li>
+        <li>
+          <NavLink
+            to="/customers"
+            className={({ isActive }) =>
+              `flex items-center p-3 rounded-lg transition duration-300 ${isActive ? 'bg-blue-700' : 'hover:bg-blue-700'}`
+            }
+          >
+            <FaUser className="mr-3 text-xl" />
+            <span className="text-lg font-semibold">Customers</span>
+          </NavLink>
+        </li>
+        <li>
+          <NavLink
+            to="/gold-loan"
+            className={({ isActive }) =>
+              `flex items-center p-3 rounded-lg transition duration-300 ${isActive ? 'bg-blue-700' : 'hover:bg-blue-700'}`
+            }
+          >
+            <FaMoneyBill className="mr-3 text-xl" />
+            <span className="text-lg font-semibold">Gold Loan</span>
           </NavLink>
         </li>
       </ul>
