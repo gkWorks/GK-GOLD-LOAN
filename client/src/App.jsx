@@ -12,16 +12,25 @@ import RDMaster from './MasterComponents/RDMaster';
 import RePledgers from './MasterComponents/RePledgers';
 import Coustomers from './pages/Coustomers';
 import GoldLoan from './pages/GoldLoan';
+import Login from './components/Login';
 const App = () => {
   return (
+    <>
+    
+
     <Router>
+
+    <Routes>
+      <Route path="/" element={<Login />} />
+    </Routes>
       <div className="flex h-screen">
         <Sidebar />
         <div className="flex-1 flex flex-col">
           <Navbar />
           <main className="flex-1 p-4">
             <Routes>
-              <Route path="/" element={<Dashboard />} />
+              
+              <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/master" element={<Master/>} />
               <Route path="/customers" element={<Coustomers/>} />
               <Route path="/gold-loan" element={<GoldLoan/>} />
@@ -37,6 +46,7 @@ const App = () => {
         </div>
       </div>
     </Router>
+    </>
   );
 };
 
