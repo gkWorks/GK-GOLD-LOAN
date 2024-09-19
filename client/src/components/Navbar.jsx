@@ -20,25 +20,13 @@ const Navbar = () => {
           </div>
         </div>
         
-        <div className="flex items-center space-x-4">
-          <Link
-            to="/"
-            className="text-lg font-semibold hover:text-blue-300 transition duration-300"
-          >
-            Dashboard
-          </Link>
-          <Link
-            to="/master"
-            className="text-lg font-semibold hover:text-blue-300 transition duration-300"
-          >
-            Master
-          </Link>
+       
           {/* Settings Icon */}
           <FaCog className="text-2xl cursor-pointer hover:text-blue-300 transition duration-300" />
           {/* User Icon */}
           <FaUser className="text-2xl cursor-pointer hover:text-blue-300 transition duration-300" />
         </div>
-      </div>
+      
     </nav>
   );
 };
