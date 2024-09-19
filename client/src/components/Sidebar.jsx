@@ -1,8 +1,17 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
-import { FaTachometerAlt, FaBox, FaUser, FaMoneyBill } from 'react-icons/fa';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { FaTachometerAlt, FaBox, FaUser, FaMoneyBill, FaSignOutAlt } from 'react-icons/fa';
 
 const Sidebar = () => {
+
+  const navigate = useNavigate(); // Use the navigate hook to programmatically navigate
+
+   // Handle logout functionality
+   const handleLogout = () => {
+    localStorage.removeItem('authToken'); // Remove the token from localStorage
+    navigate('/'); // Redirect to the login page
+  };
+
   return (
     <aside className="w-64 h-screen bg-blue-900 text-gray-100 p-6 py-10">
       <h2 className="text-2xl font-bold mb-8">Sidebar</h2>
@@ -54,6 +63,16 @@ const Sidebar = () => {
             <span className="text-lg font-semibold">Gold Loan</span>
           </NavLink>
         </li>
+        {/* Logout Button */}
+        <li>
+              <button
+                className="w-full text-left px-4 py-2 hover:bg-cyan-500 transition-colors duration-300"
+                onClick={handleLogout}
+              >
+                <FaSignOutAlt className="inline-block mr-2" />
+                Logout
+              </button>
+            </li>
       </ul>
     </aside>
   );

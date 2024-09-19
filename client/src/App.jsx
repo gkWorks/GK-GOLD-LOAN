@@ -12,10 +12,18 @@ import RDMaster from './MasterComponents/RDMaster';
 import RePledgers from './MasterComponents/RePledgers';
 import Coustomers from './pages/Coustomers';
 import GoldLoan from './pages/GoldLoan';
+<<<<<<< HEAD
 
+=======
+import Login from './components/Login';
+>>>>>>> 323ca99da57ff713824f170adf159cf5c953cdf5
 const App = () => {
   return (
+    <>
+    
+
     <Router>
+<<<<<<< HEAD
       <div className="flex h-screen overflow-hidden">
         {/* Sidebar */}
         <div className="sticky top-0 h-screen">
@@ -23,6 +31,14 @@ const App = () => {
         </div>
 
         {/* Main Content Area */}
+=======
+
+    <Routes>
+      <Route path="/" element={<Login />} />
+    </Routes>
+      <div className="flex h-screen">
+        <Sidebar />
+>>>>>>> 323ca99da57ff713824f170adf159cf5c953cdf5
         <div className="flex-1 flex flex-col">
           {/* Navbar */}
           <div className="sticky top-0 z-10">
@@ -32,10 +48,18 @@ const App = () => {
           {/* Scrollable Content */}
           <main className="flex-1 p-4 overflow-auto">
             <Routes>
+<<<<<<< HEAD
               <Route path="/" element={<Dashboard />} />
               <Route path="/master" element={<Master />} />
               <Route path="/customers" element={<Coustomers />} />
               <Route path="/gold-loan" element={<GoldLoan />} />
+=======
+              
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/master" element={<Master/>} />
+              <Route path="/customers" element={<Coustomers/>} />
+              <Route path="/gold-loan" element={<GoldLoan/>} />
+>>>>>>> 323ca99da57ff713824f170adf159cf5c953cdf5
               <Route path="/jewel-master" element={<JewelMaster />} />
               <Route path="/supporting-documents" element={<SupportingDocuments />} />
               <Route path="/gold-loan-master" element={<GoldLoanMaster />} />
@@ -47,6 +71,7 @@ const App = () => {
         </div>
       </div>
     </Router>
+    </>
   );
 };
 
