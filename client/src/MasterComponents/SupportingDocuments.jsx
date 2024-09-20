@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
+import { FaTrashAlt } from 'react-icons/fa'; // Import Trash icon from react-icons
 
 const SupportingDocuments = () => {
   const [documentName, setDocumentName] = useState('');
   const [documents, setDocuments] = useState([]);
   const [showPopup, setShowPopup] = useState(false); // State to control popup visibility
+  const [isEditing, setIsEditing] = useState(false); // State to trigger edit mode
+  const [noDocumentsPopup, setNoDocumentsPopup] = useState(false); // State to show no documents popup
 
   const handleInputChange = (e) => {
     setDocumentName(e.target.value);
@@ -19,8 +22,19 @@ const SupportingDocuments = () => {
   };
 
   const handleEdit = () => {
-    // Implement your edit functionality here
-    alert('Edit button clicked!');
+    if (documents.length === 0) {
+      // Show popup if no documents available when trying to edit
+      setNoDocumentsPopup(true);
+      setTimeout(() => setNoDocumentsPopup(false), 2000);
+    } else {
+      // Toggle edit mode
+      setIsEditing(!isEditing);
+    }
+  };
+
+  const handleDelete = (index) => {
+    const newDocuments = documents.filter((_, i) => i !== index); // Remove document by index
+    setDocuments(newDocuments);
   };
 
   return (
@@ -37,17 +51,38 @@ const SupportingDocuments = () => {
         </div>
       )}
 
+      {/* Popup for no documents */}
+      {noDocumentsPopup && (
+        <div className="fixed top-10 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
+          No documents available to edit!
+        </div>
+      )}
+
       {/* Content is centered with space between them */}
-      <div className="flex flex-1 flex-col justify-between items-center pb-40">
-        <div className="space-y-10">
+      <div className="flex flex-1 flex-col justify-between items-center pb-20">
+        <div className="space-y-10 w-full max-w-2xl">
           {/* Registered documents section */}
-          <div className="w-full max-w-2xl bg-blue-50 p-6 rounded-lg shadow-md border border-blue-500">
+          <div className="bg-blue-50 p-6 rounded-lg shadow-md border border-blue-500">
             <h2 className="text-2xl font-bold mb-4 text-blue-600">Registered Documents</h2>
-            <div className="pl-5 space-y-2"> {/* Add space between each document */}
+            <div className="space-y-2"> {/* Add space between each document */}
               {documents.length > 0 ? (
                 documents.map((doc, index) => (
-                  <div key={index} className="py-2 px-4 bg-white rounded-md shadow-sm">
-                    {doc}
+                  <div
+                    key={index}
+                    className={`py-2 px-4 bg-white rounded-md shadow-sm flex justify-between items-center transition-transform duration-500 w-full ${
+                      isEditing ? 'transform scale-105 translate-x-2' : ''
+                    }`}
+                  >
+                    <span className="break-all">{doc}</span>
+                    {/* Show delete icon only in edit mode */}
+                    {isEditing && (
+                      <button
+                        onClick={() => handleDelete(index)}
+                        className="text-red-500 hover:text-red-700 transition duration-300"
+                      >
+                        <FaTrashAlt />
+                      </button>
+                    )}
                   </div>
                 ))
               ) : (
@@ -75,9 +110,9 @@ const SupportingDocuments = () => {
             </button>
             <button
               onClick={handleEdit}
-              className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition duration-300"
+              className={`px-4 py-2 rounded-lg transition duration-300 ${isEditing ? 'bg-red-500 hover:bg-red-600 text-white' : 'bg-green-500 hover:bg-green-600 text-white'}`}
             >
-              Edit
+              {isEditing ? 'Stop Editing' : 'Edit'}
             </button>
           </div>
         </div>
