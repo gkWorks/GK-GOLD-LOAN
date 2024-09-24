@@ -3,8 +3,12 @@ const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const loginRoute = require('./routes/login');
+<<<<<<< HEAD
 const documentRoutes = require('./routes/masterroutes/documentRoutes');
 const customerRoutes = require('./routes/customersroutes/customers');
+=======
+const jewelMasterRoute = require('./routes/jewelMaster'); // Import the JewelMaster route
+>>>>>>> 4894f20ba42e9866389fedcc011273b1b20915b0
 
 dotenv.config();
 
@@ -26,8 +30,12 @@ mongoose.connect(process.env.MONGO_URI, {
 
 // Routes
 app.use('/login', loginRoute);
+<<<<<<< HEAD
 app.use('/api', documentRoutes);
 app.use('/api/customers', customerRoutes);
+=======
+app.use('/jewel-master', jewelMasterRoute); // Use the JewelMaster route
+>>>>>>> 4894f20ba42e9866389fedcc011273b1b20915b0
 
 app.listen(PORT, () => {
   console.log(`Server is now running on port ${PORT}`);

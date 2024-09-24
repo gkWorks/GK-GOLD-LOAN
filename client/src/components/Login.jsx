@@ -12,7 +12,6 @@ const Login = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Request location when the component loads
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -20,16 +19,18 @@ const Login = () => {
             latitude: position.coords.latitude,
             longitude: position.coords.longitude
           });
-          setLocationGranted(true); // Enable login once location is received
+          console.log('Location received:', position.coords); // Log the received location
+          setLocationGranted(true);
         },
         (error) => {
           setLocationError('Location access is required to log in. Please allow location access.');
           console.error("Error getting geolocation:", error);
-          setLocationGranted(false); // Disable login if location is not granted
+          setLocationGranted(false);
         }
       );
     }
   }, []);
+  
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -37,27 +38,38 @@ const Login = () => {
       setError('Location access is required to log in.');
       return;
     }
-
+  
     try {
       const response = await axios.post('http://localhost:5000/login', {
-        username,
-        password,
+        username: username, //to debugging
+        password: password, //to debugging
         latitude: location.latitude,
         longitude: location.longitude
       });
-
+      
+  
+      console.log(response.data); // Check what is returned from the backend
+  
       const { token, userType } = response.data;
-
+  
+      // Check if token and userType are valid
+      if (!token) {
+        setError('Failed to retrieve login token.');
+        return;
+      }
+  
       // Save token and user type in localStorage
       localStorage.setItem('authToken', token);
       localStorage.setItem('userType', userType);
-
+  
       // Navigate to the dashboard
       navigate('/dashboard');
     } catch (err) {
+      console.error('Login error:', err);
       setError('Invalid username or password');
     }
   };
+  
 
   return (
     <div className="relative h-screen overflow-hidden relative bg-gradient-to-br from-[#89f7fe] to-[#66a6ff]" >
