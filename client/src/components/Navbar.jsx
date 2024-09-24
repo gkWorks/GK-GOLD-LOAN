@@ -26,7 +26,6 @@ const Navbar = () => {
           {/* User Icon */}
           <FaUser className="text-2xl cursor-pointer hover:text-blue-300 transition duration-300" />
         </div>
-      
     </nav>
   );
 };

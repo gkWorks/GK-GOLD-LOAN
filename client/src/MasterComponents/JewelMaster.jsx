@@ -7,19 +7,17 @@ const JewelMaster = () => {
   const [confirmInput, setConfirmInput] = useState('');
 
   const handleAddItem = () => {
-    const trimmedNewItem = newItem.trim(); // Remove leading and trailing spaces
+    const trimmedNewItem = newItem.trim();
 
     if (trimmedNewItem) {
-      // Convert all items to lowercase for comparison
       const normalizedItems = items.map(item => item.toLowerCase());
       const normalizedNewItem = trimmedNewItem.toLowerCase();
 
-      // Check if the normalized new item already exists
       if (normalizedItems.includes(normalizedNewItem)) {
         alert('Item already exists in the list!');
       } else {
         setItems([...items, trimmedNewItem]);
-        setNewItem(''); // Clear the input after adding
+        setNewItem('');
       }
     }
   };
@@ -37,11 +35,11 @@ const JewelMaster = () => {
 
   const requestRemoveItem = (item) => {
     setItemToRemove(item);
-    setConfirmInput(''); // Clear input for new item
+    setConfirmInput('');
   };
 
   return (
-    <div className="max-w-md mx-auto mt-10 p-6 bg-white shadow-md rounded-lg">
+    <div className="max-w-sm mx-auto mt-10 p-6 bg-white shadow-md rounded-lg">
       <h2 className="text-xl font-bold mb-4">Jewel Master</h2>
 
       <ul className="list-disc pl-5 mb-4">

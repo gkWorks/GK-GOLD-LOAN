@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 const Master = () => {
   return (
     <div className="p-6">
-      <h1 className="text-4xl font-bold mb-6">MASTER OPTIONS</h1>
+      <h1 className="text-2xl font-bold mb-6 text-center">MASTER OPTIONS</h1>
       <div className="space-y-4">
         <Link
           to="/jewel-master"

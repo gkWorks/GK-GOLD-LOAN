@@ -1,20 +1,26 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { FaTachometerAlt, FaBox, FaUser, FaMoneyBill, FaSignOutAlt } from 'react-icons/fa';
+import Smartlogo from '../assets/smartFinance.png';
 
 const Sidebar = () => {
 
-  const navigate = useNavigate(); // Use the navigate hook to programmatically navigate
+  const navigate = useNavigate();
 
-   // Handle logout functionality
-   const handleLogout = () => {
+  // Handle logout functionality
+  const handleLogout = () => {
     localStorage.removeItem('authToken'); // Remove the token from localStorage
     navigate('/'); // Redirect to the login page
   };
 
   return (
     <aside className="w-64 h-screen bg-blue-900 text-gray-100 p-6 py-10">
-      <h2 className="text-2xl font-bold mb-8">Sidebar</h2>
+      {/* Center and reduce logo size */}
+      <div className="flex justify-center mb-4">
+        <img src={Smartlogo} alt="Smart Finance Logo" className="w-24 h-auto" />
+      </div>
+
+      <h2 className="text-center text-2xl font-bold mb-8">Smart Finance</h2>
 
       <hr className="border-gray-700 mb-8" />
 
@@ -65,14 +71,14 @@ const Sidebar = () => {
         </li>
         {/* Logout Button */}
         <li>
-              <button
-                className="w-full text-left px-4 py-2 hover:bg-cyan-500 transition-colors duration-300"
-                onClick={handleLogout}
-              >
-                <FaSignOutAlt className="inline-block mr-2" />
-                Logout
-              </button>
-            </li>
+          <button
+            className="w-full text-left px-4 py-2 hover:bg-cyan-500 transition-colors duration-300"
+            onClick={handleLogout}
+          >
+            <FaSignOutAlt className="inline-block mr-2" />
+            Logout
+          </button>
+        </li>
       </ul>
     </aside>
   );

@@ -3,12 +3,16 @@ const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const loginRoute = require('./routes/login');
+const documentRoutes = require('./routes/masterroutes/documentRoutes');
+const customerRoutes = require('./routes/customersroutes/customers');
 
 dotenv.config();
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+
+// Increase the limit for incoming request bodies
+app.use(express.json({ limit: '50mb' })); // Adjust the limit as needed
 
 const PORT = process.env.PORT || 5000;
 
@@ -22,7 +26,9 @@ mongoose.connect(process.env.MONGO_URI, {
 
 // Routes
 app.use('/login', loginRoute);
+app.use('/api', documentRoutes);
+app.use('/api/customers', customerRoutes);
 
 app.listen(PORT, () => {
-  console.log(`Server is now running ${PORT}`);
+  console.log(`Server is now running on port ${PORT}`);
 });
