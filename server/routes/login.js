@@ -2,7 +2,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const router = express.Router();
 const mongoose = require('mongoose');
-const { companySchema, LoginTimestamp } = require('../models/company');
+const { companySchema } = require('../models/company'); // Remove LoginTimestamp from global import
 
 // Function to convert UTC date to IST
 function convertUTCToIST(date) {
@@ -10,134 +10,166 @@ function convertUTCToIST(date) {
   return new Date(date.getTime() + IST_OFFSET);
 }
 
+// Helper function to extract company and branch identifier from the username
+function getCompanyAndBranchIdentifier(username) {
+  const [emailPrefix, domain] = username.split('@');
+  const [companyDomain, branchSuffix] = domain.split('.');
+
+  return {
+    companyDomain: companyDomain.toUpperCase(),
+    branchSuffix: branchSuffix ? branchSuffix.toLowerCase() : null
+  };
+}
+
+// Helper function to connect to the specific company database
+async function connectToCompanyDatabase(companyDomain) {
+  const dbUri = `mongodb+srv://akash19082001:akash19082001@atlascluster.hsvvs.mongodb.net/COMPANY_${companyDomain}`;
+  console.log('Connecting to database:', dbUri);
+  const companyConnection = await mongoose.createConnection(dbUri).asPromise();
+  return companyConnection;
+}
+
+// Function to find a branch user across all branch collections
+async function findBranchUser(companyConnection, branchSuffix, username, password) {
+  const db = companyConnection.db; // Correctly access the native db object
+  const collections = await db.listCollections().toArray();
+  const branchCollections = collections.filter(col => col.name.startsWith('branch_'));
+
+  for (const branchCollection of branchCollections) {
+    // Check if the branchSuffix matches the collection name
+    if (branchSuffix && !branchCollection.name.includes(branchSuffix.toLowerCase())) {
+      continue; // Skip collections that don't match the branch suffix
+    }
+
+    const BranchModel = companyConnection.model(branchCollection.name, companySchema, branchCollection.name);
+    const branch = await BranchModel.findOne({ branchUsername: username, branchPassword: password });
+    if (branch) {
+      return { branch, collection: branchCollection.name };
+    }
+  }
+
+  return null;
+}
+
 // Login Route
 router.post('/', async (req, res) => {
   const { username, password, latitude, longitude } = req.body;
 
-  console.log('Received username:', username);
-  console.log('Received password:', password);
-  console.log('Received latitude:', latitude);
-  console.log('Received longitude:', longitude);
-
   try {
-    const companyIdentifier = getCompanyIdentifier(username);
+    const { companyDomain, branchSuffix } = getCompanyAndBranchIdentifier(username);
 
-    // Fetch all collection names from the current database
-    const collections = await mongoose.connection.db.listCollections().toArray();
+    if (!companyDomain) {
+      return res.status(400).json({ message: 'Invalid company identifier' });
+    }
 
-    let collectionName = collections
-      .map(c => c.name)
-      .find(name => {
-        const baseIdentifier = `COMPANY_${companyIdentifier}`;
-        return name.startsWith(baseIdentifier);
+    console.log('Company Domain:', companyDomain);
+    console.log('Branch Suffix:', branchSuffix);
+
+    // Connect to the company-specific database
+    const companyConnection = await connectToCompanyDatabase(companyDomain);
+    console.log('Connected to company database:', companyDomain);
+
+    // Access the `COMPANY` collection
+    const CompanyModel = companyConnection.model('COMPANY', companySchema, 'COMPANY');
+
+    // Dynamically create the LoginTimestamp model in the company database
+    const loginTimestampSchema = new mongoose.Schema({
+      username: String,
+      timestamp: Date,
+      userType: String,
+      ipAddress: String,
+      deviceInfo: String,
+      latitude: Number,
+      longitude: Number
+    });
+
+    const LoginTimestamp = companyConnection.model('LoginTimestamp', loginTimestampSchema, 'LoginTimestamp');
+
+    // Check if it's a company login (no branch suffix)
+    if (!branchSuffix) {
+      const company = await CompanyModel.findOne({
+        companyUsername: username,
+        companyPassword: password
       });
 
-    if (!collectionName) {
-      console.log(`No collection found for companyIdentifier: ${companyIdentifier}`);
+      if (company) {
+        // Company login successful
+        console.log('Company found:', company);
 
-      // If no collection for the company identifier is found, search across all company collections for branches
-      const allCompanyCollections = collections
-        .map(c => c.name)
-        .filter(name => name.startsWith('COMPANY_'));
+        // Capture IP address and device info
+        const ipAddress = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+        const deviceInfo = req.headers['user-agent'];
 
-      for (const companyCollection of allCompanyCollections) {
-        console.log(`Searching for branch in collection: ${companyCollection}`);
-        const CompanyModel = mongoose.models[companyCollection] || mongoose.model(companyCollection, companySchema, companyCollection);
-
-        const company = await CompanyModel.findOne({
-          'branches.branchUsername': username,
-          'branches.branchPassword': password
+        // Store login timestamp, IP address, device info, and geolocation in the correct company database
+        const istTimestamp = convertUTCToIST(new Date());
+        await LoginTimestamp.create({
+          username,
+          timestamp: istTimestamp,
+          userType: 'company',
+          ipAddress,
+          deviceInfo,
+          latitude,
+          longitude
         });
 
-        if (company) {
-          collectionName = companyCollection;
-          console.log(`Branch found in collection: ${companyCollection}`);
-          break;
-        }
-      }
+         // Company login successful
+        const companyIdentifier = `COMPANY_${companyDomain}`; // Create a company-specific identifier
 
-      // If no company collection contains the branch
-      if (!collectionName) {
-        return res.status(401).json({ message: 'Invalid username or password' });
-      }
-    }
+        // Generate JWT token for company login
+        const token = jwt.sign(
+          { username, userType: 'company', companyDomain },
+          process.env.JWT_SECRET,
+          { expiresIn: '1h' }
+        );
 
-    console.log('Using collection:', collectionName);
-
-    // Dynamically create or use existing model for the found collection
-    let CompanyModel = mongoose.models[collectionName] || mongoose.model(collectionName, companySchema, collectionName);
-
-    // Try to find the company or branch by username and password
-    const company = await CompanyModel.findOne({
-      $or: [
-        { companyUsername: username, companyPassword: password }, // Check for company login
-        { 'branches.branchUsername': username, 'branches.branchPassword': password } // Check for branch login
-      ]
-    });
-
-    console.log(`Company document found: ${company ? true : false}`);
-
-    if (!company) {
-      console.log('Company or branch not found with provided credentials.');
-      return res.status(401).json({ message: 'Invalid username or password' });
-    }
-
-    let validPassword = false;
-    let userType = '';
-
-    // Check if it's a company login
-    if (company.companyUsername === username && company.companyPassword === password) {
-      validPassword = true;
-      userType = 'company';
-      console.log('Company login successful.');
-    } else {
-      // Check for branch login
-      const branch = company.branches.find(branch => branch.branchUsername === username && branch.branchPassword === password);
-      if (branch) {
-        validPassword = true;
-        userType = 'branch';
-        console.log(`Branch login successful for branch: ${branch.branchName}`);
+        return res.status(200).json({ message: 'Company login successful', token, userType: 'company' });
       }
     }
 
-    if (!validPassword) {
-      console.log('Invalid username or password after checks.');
-      return res.status(401).json({ message: 'Invalid username or password' });
+    // If no company login, try to find a branch user
+    const branchResult = await findBranchUser(companyConnection, branchSuffix, username, password);
+
+    if (branchResult && branchResult.branch) {
+      // Branch login successful
+      console.log('Branch found in collection:', branchResult.collection);
+
+      // Capture IP address and device info
+      const ipAddress = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+      const deviceInfo = req.headers['user-agent'];
+
+      // Store login timestamp, IP address, device info, and geolocation in the correct company database
+      const istTimestamp = convertUTCToIST(new Date());
+      await LoginTimestamp.create({
+        username,
+        timestamp: istTimestamp,
+        userType: 'branch',
+        ipAddress,
+        deviceInfo,
+        latitude,
+        longitude
+      });
+
+       // Branch login successful
+      const companyIdentifier = `COMPANY_${companyDomain}`; // Create a company-specific identifier
+
+      // Generate JWT token for branch login
+      const token = jwt.sign(
+        { username, userType: 'branch', companyDomain },
+        process.env.JWT_SECRET,
+        { expiresIn: '1h' }
+      );
+
+      return res.status(200).json({ message: 'Branch login successful', token, userType: 'branch' });
     }
 
-    // Capture IP address and device info
-    const ipAddress = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-    const deviceInfo = req.headers['user-agent'];
+    // If no branch or company found
+    console.log('Invalid Username or Password');
+    return res.status(401).json({ message: 'Invalid Username or Password' });
 
-    // Store login timestamp, IP address, device info, and geolocation
-    const istTimestamp = convertUTCToIST(new Date());
-    await LoginTimestamp.create({
-      username,
-      timestamp: istTimestamp,
-      userType,
-      ipAddress,
-      deviceInfo,
-      latitude,
-      longitude
-    });
-
-    // Generate JWT token
-    const token = jwt.sign({ username, userType }, process.env.JWT_SECRET, { expiresIn: '1h' });
-
-    return res.status(200).json({ message: 'Login successful', token, userType });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: 'Server error' });
   }
 });
-
-// Helper function to extract company identifier from the username
-function getCompanyIdentifier(username) {
-  const companyDomain = username.split('@')[1].split('.')[0];
-  const companyIdentifier = companyDomain.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase();
-
-  console.log('Extracted companyIdentifier:', companyIdentifier); // Debugging line
-  return companyIdentifier;
-}
 
 module.exports = router;
