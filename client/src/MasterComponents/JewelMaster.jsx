@@ -8,13 +8,6 @@ const JewelMaster = () => {
   const [confirmInput, setConfirmInput] = useState('');
   const [error, setError] = useState('');
 
-<<<<<<< HEAD
-  const handleAddItem = () => {
-    const trimmedNewItem = newItem.trim();
-
-    if (trimmedNewItem) {
-      const normalizedItems = items.map(item => item.toLowerCase());
-=======
   const token = localStorage.getItem('authToken');
   console.log('Token being sent:', token); // Debug token
 
@@ -47,16 +40,11 @@ const JewelMaster = () => {
 
     if (trimmedNewItem) {
       const normalizedItems = items.map(item => item.itemName.toLowerCase());
->>>>>>> 4894f20ba42e9866389fedcc011273b1b20915b0
       const normalizedNewItem = trimmedNewItem.toLowerCase();
 
       if (normalizedItems.includes(normalizedNewItem)) {
         alert('Item already exists in the list!');
       } else {
-<<<<<<< HEAD
-        setItems([...items, trimmedNewItem]);
-        setNewItem('');
-=======
         try {
           const response = await axios.post('http://localhost:5000/jewel-master', { itemName: trimmedNewItem }, {
             headers: {
@@ -69,7 +57,6 @@ const JewelMaster = () => {
           console.error('Error adding jewel item:', error);
           setError('Failed to add jewel item: ' + (error.response?.data?.message || error.message));
         }
->>>>>>> 4894f20ba42e9866389fedcc011273b1b20915b0
       }
     }
   };
@@ -100,7 +87,7 @@ const JewelMaster = () => {
   };
 
   return (
-    <div className="max-w-sm mx-auto mt-10 p-6 bg-white shadow-md rounded-lg">
+    <div className="max-w-md mx-auto mt-10 p-6 bg-white shadow-md rounded-lg">
       <h2 className="text-xl font-bold mb-4">Jewel Master</h2>
 
       {error && <p className="text-red-500">{error}</p>}
