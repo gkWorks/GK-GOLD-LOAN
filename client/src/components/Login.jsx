@@ -72,7 +72,7 @@ const Login = () => {
   
 
   return (
-    <div className="relative h-screen overflow-hidden relative bg-gradient-to-br from-[#89f7fe] to-[#66a6ff]" >
+    <div className="relative h-screen overflow-hidden  bg-gradient-to-br from-[#89f7fe] to-[#66a6ff]" >
       {/* Floating bubbles */}
       <div className="bubble" />
       <div className="bubble" />

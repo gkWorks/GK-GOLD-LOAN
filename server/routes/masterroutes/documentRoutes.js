@@ -1,47 +1,60 @@
 const express = require('express');
 const router = express.Router();
-const DocumentRegistered = require('../../models/mastermodels/documentModel');
+const authenticateToken = require('../../middleware/auth');
+const { connectToCompanyDatabase } = require('../../DataBase/db'); // Import the shared DB connection
+const documentSchema = require('../../models/mastermodels/documentModel');
 
-// Route to register a document
+router.use(authenticateToken);
+
+function getDocumentModel(connection) {
+  return connection.model('Document', documentSchema, 'documents');
+}
+
 router.post('/register', async (req, res) => {
-  const { documentName } = req.body;
-
-  if (!documentName) {
-    return res.status(400).json({ message: 'Document name is required' });
-  }
-
   try {
-    const newDocument = new DocumentRegistered({ documentName });
+    const companyDomain = req.user.companyDomain;
+    const connection = await connectToCompanyDatabase(companyDomain);
+    const Document = getDocumentModel(connection);
+    const newDocument = new Document(req.body);
     await newDocument.save();
-    return res.status(201).json({ message: 'Document registered successfully', document: newDocument });
+    res.status(201).json(newDocument);
   } catch (error) {
-    return res.status(500).json({ message: 'Server error', error: error.message });
+    console.error('Error registering document:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
-// Route to get all documents
+// GET /api/documents - Get all documents
 router.get('/documents', async (req, res) => {
-  try {
-    const documents = await DocumentRegistered.find();
-    return res.status(200).json({ documents });
-  } catch (error) {
-    return res.status(500).json({ message: 'Server error', error: error.message });
-  }
+    try {
+        const companyDomain = req.user.companyDomain; // Get the user's company domain from the token
+        const connection = await connectToCompanyDatabase(companyDomain); // Connect to the company database
+
+        const Document = getDocumentModel(connection);
+        const documents = await Document.find();
+        res.json({ documents });
+    } catch (error) {
+        console.error('Error fetching documents:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
 });
 
-// Route to delete a document by ID
+// DELETE /api/documents/:id - Delete a document
 router.delete('/documents/:id', async (req, res) => {
-    const { id } = req.params;
-  
     try {
-      const deletedDocument = await DocumentRegistered.findByIdAndDelete(id);
-      if (!deletedDocument) {
-        return res.status(404).json({ message: 'Document not found' });
-      }
-      return res.status(200).json({ message: 'Document deleted successfully' });
+        const companyDomain = req.user.companyDomain; // Get the user's company domain from the token
+        const connection = await connectToCompanyDatabase(companyDomain); // Connect to the company database
+
+        const Document = getDocumentModel(connection);
+        const deletedDocument = await Document.findByIdAndDelete(req.params.id);
+        if (!deletedDocument) {
+            return res.status(404).json({ message: 'Document not found' });
+        }
+        res.json({ message: 'Document deleted' });
     } catch (error) {
-      return res.status(500).json({ message: 'Server error', error: error.message });
+        console.error('Error deleting document:', error);
+        res.status(500).json({ message: 'Server error' });
     }
-  });
+});
   
 module.exports = router;

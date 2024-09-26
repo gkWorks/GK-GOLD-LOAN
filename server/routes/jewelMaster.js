@@ -1,92 +1,38 @@
 const express = require('express');
 const router = express.Router();
-const mongoose = require('mongoose');
 const authenticateToken = require('../middleware/auth');
+const { connectToCompanyDatabase } = require('../DataBase/db'); // Using shared DB connection utility
 const jewelMasterSchema = require('../models/jewelMaster');
-const cors = require('cors');
-
-router.use(cors()); // Enable CORS for API requests
 
 // Middleware to authenticate token
 router.use(authenticateToken);
 
-// Cache for mongoose connections to avoid opening/closing repeatedly
-const connectionCache = {};
-
-// Helper function to connect to the specific company database
-async function connectToCompanyDatabase(companyDomain) {
-  if (connectionCache[companyDomain]) {
-    return connectionCache[companyDomain];
-  }
-
-  try {
-    const dbUri = `mongodb+srv://your_username:your_password@atlascluster.hsvvs.mongodb.net/${companyDomain}?retryWrites=true&w=majority`;
-    const connection = await mongoose.createConnection(dbUri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-
-    if (!connection) {
-      throw new Error('Database connection failed.');
-    }
-
-    // Cache the connection for future requests
-    connectionCache[companyDomain] = connection;
-
-    return connection;
-  } catch (error) {
-    console.error('Error connecting to company database:', error);
-    throw error;
-  }
-}
-
-// Helper function to get JewelMaster model on the specific company connection
+// Helper function to get JewelMaster model
 function getJewelMasterModel(connection) {
-  if (!connection.models.JewelMaster) {
-    return connection.model('JewelMaster', jewelMasterSchema);
-  }
-  return connection.models.JewelMaster;
+  return connection.model('JewelMaster', jewelMasterSchema, 'JewelMaster');
 }
 
-// GET /jewel-master - Get all jewel items
+// GET /jewel-master - Fetch all jewel items
 router.get('/', async (req, res) => {
   try {
-    const companyDomain = req.user.companyDomain;
-
-    if (!companyDomain) {
-      return res.status(400).json({ message: 'Company identifier is required' });
-    }
-
-    const connection = await connectToCompanyDatabase(companyDomain);
-    const JewelMaster = getJewelMasterModel(connection);
-    const items = await JewelMaster.find();
-
-    res.json(items);
+    const companyDomain = req.user.companyDomain; // Extract company domain from authenticated user token
+    const connection = await connectToCompanyDatabase(companyDomain); // Use the shared DB connection utility
+    const JewelMaster = getJewelMasterModel(connection); // Get the JewelMaster model
+    const items = await JewelMaster.find(); // Fetch all jewel items
+    res.json(items); // Return items in JSON format
   } catch (error) {
-    console.error('Error fetching jewel items:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error fetching jewel items:', error); // Log error to the console
+    res.status(500).json({ message: 'Server error' }); // Return server error response
   }
 });
 
 // POST /jewel-master - Add a new jewel item
 router.post('/', async (req, res) => {
-  const { itemName } = req.body;
-
-  if (!itemName) {
-    return res.status(400).json({ message: 'Item name is required' });
-  }
-
   try {
     const companyDomain = req.user.companyDomain;
-
-    if (!companyDomain) {
-      return res.status(400).json({ message: 'Company identifier is required' });
-    }
-
-    const connection = await connectToCompanyDatabase(companyDomain);
+    const connection = await connectToCompanyDatabase(companyDomain); // Connect to the company database
     const JewelMaster = getJewelMasterModel(connection);
     const newItem = new JewelMaster(req.body);
-
     await newItem.save();
     res.status(201).json(newItem);
   } catch (error) {
@@ -95,24 +41,36 @@ router.post('/', async (req, res) => {
   }
 });
 
-// DELETE /jewel-master/:id - Remove a jewel item
+// PUT /jewel-master/:id - Update an existing jewel item
+router.put('/:id', async (req, res) => {
+  try {
+    const companyDomain = req.user.companyDomain;
+    const connection = await connectToCompanyDatabase(companyDomain); // Connect to the company database
+
+    const JewelMaster = getJewelMasterModel(connection);
+    const updatedItem = await JewelMaster.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!updatedItem) {
+      return res.status(404).json({ message: 'Jewel item not found' });
+    }
+    res.json(updatedItem);
+  } catch (error) {
+    console.error('Error updating jewel item:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// DELETE /jewel-master/:id - Delete a jewel item
 router.delete('/:id', async (req, res) => {
   try {
     const companyDomain = req.user.companyDomain;
+    const connection = await connectToCompanyDatabase(companyDomain); // Connect to the company database
 
-    if (!companyDomain) {
-      return res.status(400).json({ message: 'Company identifier is required' });
-    }
-
-    const connection = await connectToCompanyDatabase(companyDomain);
     const JewelMaster = getJewelMasterModel(connection);
     const deletedItem = await JewelMaster.findByIdAndDelete(req.params.id);
-
     if (!deletedItem) {
       return res.status(404).json({ message: 'Jewel item not found' });
     }
-
-    res.json({ message: 'Jewel item deleted successfully' });
+    res.json({ message: 'Jewel item deleted' });
   } catch (error) {
     console.error('Error deleting jewel item:', error);
     res.status(500).json({ message: 'Server error' });

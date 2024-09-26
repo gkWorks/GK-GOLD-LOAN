@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import updateprofile from '../assets/updateprofile.png';
-import { FaCamera } from 'react-icons/fa';
+import { FaCamera, FaPlus, FaTrash } from 'react-icons/fa';
+
 
 const Customers = () => {
   const [documents, setDocuments] = useState([]);
@@ -28,15 +29,22 @@ const Customers = () => {
     aadhaarNo: '',
     panNo: '',
     customerId: '',
-    nominee: '',
-    relation: '',
-    image: ''
+    idproof: '',
+    image: '',
   });
+  const [nominees, setNominees] = useState([{ nominee: '', relation: '' }]); // State for dynamic nominees
+
+  const token = localStorage.getItem('authToken');
+  console.log('Token being sent:', token); // Debug token
 
   useEffect(() => {
     const fetchDocuments = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/documents');
+        const response = await axios.get('http://localhost:5000/api/documents', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
         setDocuments(response.data.documents);
       } catch (error) {
         console.error('Error fetching documents:', error);
@@ -44,7 +52,7 @@ const Customers = () => {
     };
 
     fetchDocuments();
-  }, []);
+  }, [token]);
 
   const handleDobChange = (e) => {
     const dobValue = e.target.value;
@@ -64,6 +72,67 @@ const Customers = () => {
       ...formData,
       [e.target.name]: e.target.value
     });
+  };
+
+  const handleNomineeChange = (index, e) => {
+    const { name, value } = e.target;
+    const updatedNominees = [...nominees];
+    updatedNominees[index][name] = value;
+    setNominees(updatedNominees);
+  };
+
+  const addNominee = () => {
+    setNominees([...nominees, { nominee: '', relation: '' }]);
+  };
+
+  const removeNominee = (index) => {
+    const updatedNominees = nominees.filter((_, i) => i !== index);
+    setNominees(updatedNominees);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const finalData = {
+      ...formData,
+      dob: dob,
+      age: age,
+      image: capturedImage,
+      nominees: nominees, // Include nominees in final data
+    };
+
+    try {
+      const response = await axios.post('http://localhost:5000/api/customers', {finalData}, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      console.log('Customer Registered:', response.data);
+      
+      // Reset form after successful submission
+      setFormData({
+        Date: '',
+        name: '',
+        spouse: '',
+        dob: '',
+        age: '',
+        gender: '',
+        address: '',
+        notes: '',
+        mobileNo: '',
+        email: '',
+        aadhaarNo: '',
+        panNo: '',
+        customerId: '',
+        idproof: '',
+        image: ''
+      });
+      setCapturedImage(null);
+      setDob('');
+      setAge('');
+      setNominees([{ nominee: '', relation: '' }]); // Reset nominees
+    } catch (error) {
+      console.error('Error submitting the form:', error);
+    }
   };
 
   const toggleCamera = async () => {
@@ -117,45 +186,7 @@ const Customers = () => {
     fileInputRef.current.click();
   };
   
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    const finalData = {
-      ...formData,
-      dob: dob,
-      age: age,
-      image: capturedImage,
-    };
-    
-    try {
-      const response = await axios.post('http://localhost:5000/api/customers', finalData);
-      console.log('Customer Registered:', response.data);
-      // Reset form after successful submission
-      setFormData({
-        Date: '',
-        name: '',
-        spouse: '',
-        dob: '',
-        age: '',
-        gender: '',
-        address: '',
-        notes: '',
-        mobileNo: '',
-        email: '',
-        aadhaarNo: '',
-        panNo: '',
-        customerId: '',
-        nominee: '',
-        relation: '',
-        image: ''
-      });
-      setCapturedImage(null);
-      setDob('');
-      setAge('');
-    } catch (error) {
-      console.error('Error submitting the form:', error);
-    }
-  };
+  
   
   const openPopup = () => {
     setIsPopupOpen(true);
@@ -207,6 +238,16 @@ const Customers = () => {
             </div>
           </div>
   
+            <div>
+              <label className="block text-xs font-bold mb-1">Mobile No</label>
+              <input
+                type="text"
+                name="mobileNo"
+                value={formData.mobileNo}
+                onChange={handleChange}
+                className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm"
+              />
+            </div>
           {/* Spouse and Date of Birth */}
           <div className="flex space-x-2">
             <div className="w-1/2">
@@ -280,30 +321,7 @@ const Customers = () => {
           </div>
           {/* Mobile No and Customer ID */}
           <div className="flex space-x-2">
-            <div className="w-1/2">
-              <label className="block text-xs font-bold mb-1">Mobile No</label>
-              <input
-                type="text"
-                name="mobileNo"
-                value={formData.mobileNo}
-                onChange={handleChange}
-                className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm"
-              />
-            </div>
-            <div className="w-1/2">
-              <label className="block text-xs font-bold mb-1">Customer ID No</label>
-              <input
-                type="text"
-                name="customerId"
-                value={formData.customerId}
-                onChange={handleChange}
-                className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm"
-              />
-            </div>
-          </div>
-  
-          {/* ID Proof, Email, Aadhaar, PAN, Nominee, Relation, and Address */}
-          <div>
+          <div className="w-1/2">
             <label className="block text-xs font-bold mb-1">ID Proof</label>
             <select
               name="idproof"
@@ -319,31 +337,61 @@ const Customers = () => {
               ))}
             </select>
           </div>
-  
-  
-  
-          <div className="flex space-x-2">
             <div className="w-1/2">
-              <label className="block text-xs font-bold mb-1">Nominee</label>
+              <label className="block text-xs font-bold mb-1">ID No</label>
               <input
                 type="text"
-                name="nominee"
-                value={formData.nominee}
-                onChange={handleChange}
-                className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm"
-              />
-            </div>
-            <div className="w-1/2">
-              <label className="block text-xs font-bold mb-1">Relation</label>
-              <input
-                type="text"
-                name="relation"
-                value={formData.relation}
+                name="customerId"
+                value={formData.customerId}
                 onChange={handleChange}
                 className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm"
               />
             </div>
           </div>
+  
+          {/* ID Proof, Email, Aadhaar, PAN, Nominee, Relation, and Address */}
+          <div className="w-full mt-4">
+          <label className="block text-xs font-bold mb-1">Nominees</label>
+          {nominees.map((nomineeData, index) => (
+            <div key={index} className="flex space-x-2 items-center">
+              <div className="w-1/2">
+                <input
+                  type="text"
+                  name="nominee"
+                  placeholder="Nominee"
+                  value={nomineeData.nominee}
+                  onChange={(e) => handleNomineeChange(index, e)}
+                  className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm"
+                />
+              </div>
+              <div className="w-1/2">
+              <label className="block text-xs font-bold mb-1">Relation</label>
+                <input
+                  type="text"
+                  name="relation"
+                  placeholder="Relation"
+                  value={nomineeData.relation}
+                  onChange={(e) => handleNomineeChange(index, e)}
+                  className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => removeNominee(index)}
+                className="px-2 py-1 bg-red-500 text-white rounded shadow-md"
+              >
+                <FaTrash />
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={addNominee}
+            className="mt-2 px-2 py-1 bg-blue-500 text-white rounded shadow-md"
+          >
+            <FaPlus /> Add Nominee
+          </button>
+        </div>
   
           <div>
             <label className="block text-xs font-bold mb-1">Address</label>

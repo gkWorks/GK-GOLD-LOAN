@@ -38,39 +38,55 @@ const SupportingDocuments = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState(null);
 
+  const token = localStorage.getItem('authToken'); // Get the token from localStorage
+
   useEffect(() => {
-    // Fetch documents from backend when component mounts
     const fetchDocuments = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/documents');
+        const response = await axios.get('http://localhost:5000/api/documents', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        console.log('Fetched documents:', response.data.documents); // Log the documents
         setDocuments(response.data.documents);
       } catch (error) {
         console.error('Error fetching documents:', error);
       }
     };
     fetchDocuments();
-  }, []);
+  }, [token]);
 
   const handleInputChange = (e) => {
     setDocumentName(e.target.value);
   };
 
-const handleRegister = async () => {
-  const trimmedDocumentName = documentName.trim(); // Trim whitespace
+  const handleRegister = async (e) => {
+    e.preventDefault(); // Prevent default form submission behavior
+    const trimmedDocumentName = documentName.trim();
 
-  if (trimmedDocumentName) {
-    try {
-      const response = await axios.post('http://localhost:5000/api/register', { documentName: trimmedDocumentName });
-      setDocuments([...documents, response.data.document]);
-      setDocumentName('');
-      setShowPopup(true);
-      setTimeout(() => setShowPopup(false), 2000);
-    } catch (error) {
-      console.error('Error registering document:', error);
+    if (trimmedDocumentName) {
+      try {
+        const response = await axios.post('http://localhost:5000/api/register', 
+          { documentName: trimmedDocumentName }, 
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          }
+        );
+        const newDocument = response.data.document;
+        
+        // Update the documents state
+        setDocuments(prevDocuments => [...prevDocuments, newDocument]);
+        setDocumentName(''); // Clear input field
+        setShowPopup(true); // Show success message
+        setTimeout(() => setShowPopup(false), 2000); // Hide message after 2 seconds
+      } catch (error) {
+        console.error('Error registering document:', error);
+      }
     }
-  }
-};
-
+  };
 
   const handleEdit = () => {
     if (documents.length === 0) {
@@ -89,7 +105,11 @@ const handleRegister = async () => {
   const handleDelete = async () => {
     if (documentToDelete) {
       try {
-        await axios.delete(`http://localhost:5000/api/documents/${documentToDelete}`);
+        await axios.delete(`http://localhost:5000/api/documents/${documentToDelete}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
         // Update the state to remove the deleted document
         setDocuments(documents.filter(doc => doc._id !== documentToDelete));
         setModalOpen(false);
@@ -103,7 +123,7 @@ const handleRegister = async () => {
   return (
     <div className="flex flex-col h-screen p-6">
       <div className="w-full">
-      <h1 className="text-2xl font-bold mb-6 text-center">Document Name Master</h1>
+        <h1 className="text-2xl font-bold mb-6 text-center">Document Name Master</h1>
       </div>
 
       {showPopup && (
@@ -123,26 +143,24 @@ const handleRegister = async () => {
           <div className="bg-blue-50 p-6 rounded-lg shadow-md border border-blue-500">
             <h2 className="text-2xl font-bold mb-4 text-blue-600">Registered Documents</h2>
             <div className="space-y-2">
-              {documents.length > 0 ? (
-                documents.map((doc) => (
-                  <div
-                    key={doc._id} // Use the document's unique _id
-                    className={`py-2 px-4 bg-white rounded-md shadow-sm flex justify-between items-center transition-transform duration-500 w-full ${
-                      isEditing ? 'transform scale-105 translate-x-2' : ''
-                    }`}
-                  >
-                    <span className="break-all">{doc.documentName}</span>
-                    {isEditing && (
-                      <button
-                        onClick={() => handleDeleteInitiate(doc._id)} // Initiate delete
-                        className="text-red-500 hover:text-red-700 transition duration-300"
-                      >
-                        <FaTrashAlt />
-                      </button>
-                    )}
-                  </div>
-                ))
-              ) : (
+  {documents.length > 0 ? (
+    documents.map((doc) => (
+      <div
+        key={doc._id || Math.random()} // Ensure a unique key
+        className="py-2 px-4 bg-white rounded-md shadow-sm flex justify-between items-center w-full" // Removed animation classes
+      >
+        <span className="break-all">{doc.documentName || 'Untitled Document'}</span>
+        {isEditing && (
+          <button
+            onClick={() => handleDeleteInitiate(doc._id)} // Initiate delete
+            className="text-red-500 hover:text-red-700 transition duration-300"
+          >
+            <FaTrashAlt />
+          </button>
+        )}
+      </div>
+    ))
+  ) : (
                 <div className="text-gray-500">No documents registered yet</div>
               )}
             </div>
@@ -150,21 +168,23 @@ const handleRegister = async () => {
         </div>
 
         <div className="w-full max-w-md p-6 rounded-lg shadow-lg mt-10 mb-5 border border-blue-500 bg-blue-50">
-          <input
-            type="text"
-            value={documentName}
-            onChange={handleInputChange}
-            className="border border-gray-300 p-2 w-full rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Enter document name"
-          />
-          <div className="flex space-x-4 justify-center">
-            <button onClick={handleRegister} className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition duration-300">
-              Register
-            </button>
-            <button onClick={handleEdit} className={`px-4 py-2 rounded-lg transition duration-300 ${isEditing ? 'bg-red-500 hover:bg-red-600 text-white' : 'bg-green-500 hover:bg-green-600 text-white'}`}>
-              {isEditing ? 'Stop Editing' : 'Edit'}
-            </button>
-          </div>
+          <form onSubmit={handleRegister}> {/* Add form tag for submission handling */}
+            <input
+              type="text"
+              value={documentName}
+              onChange={handleInputChange}
+              className="border border-gray-300 p-2 w-full rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter document name"
+            />
+            <div className="flex space-x-4 justify-center">
+              <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition duration-300">
+                Register
+              </button>
+              <button onClick={handleEdit} type="button" className={`px-4 py-2 rounded-lg transition duration-300 ${isEditing ? 'bg-red-500 hover:bg-red-600 text-white' : 'bg-green-500 hover:bg-green-600 text-white'}`}>
+                {isEditing ? 'Stop Editing' : 'Edit'}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
 
