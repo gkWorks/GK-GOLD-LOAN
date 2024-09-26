@@ -1,28 +1,29 @@
 const express = require('express');
 const router = express.Router();
 const authenticateToken = require('../middleware/auth');
-const { connectToCompanyDatabase } = require('../DataBase/db'); // Using shared DB connection utility
 const jewelMasterSchema = require('../models/jewelMaster');
+const { connectToCompanyDatabase } = require('../DataBase/db'); // Reference to the separate db.js file
 
 // Middleware to authenticate token
 router.use(authenticateToken);
 
-// Helper function to get JewelMaster model
+// Helper function to get JewelMaster model on the specific company connection
 function getJewelMasterModel(connection) {
   return connection.model('JewelMaster', jewelMasterSchema, 'JewelMaster');
 }
 
-// GET /jewel-master - Fetch all jewel items
+// GET /jewel-master - Get all jewel items
 router.get('/', async (req, res) => {
   try {
-    const companyDomain = req.user.companyDomain; // Extract company domain from authenticated user token
-    const connection = await connectToCompanyDatabase(companyDomain); // Use the shared DB connection utility
-    const JewelMaster = getJewelMasterModel(connection); // Get the JewelMaster model
-    const items = await JewelMaster.find(); // Fetch all jewel items
-    res.json(items); // Return items in JSON format
+    const companyDomain = req.user.companyDomain;
+    const connection = await connectToCompanyDatabase(companyDomain); // Use db.js for the connection
+
+    const JewelMaster = getJewelMasterModel(connection);
+    const items = await JewelMaster.find();
+    res.json(items);
   } catch (error) {
-    console.error('Error fetching jewel items:', error); // Log error to the console
-    res.status(500).json({ message: 'Server error' }); // Return server error response
+    console.error('Error fetching jewel items:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
@@ -30,7 +31,8 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const companyDomain = req.user.companyDomain;
-    const connection = await connectToCompanyDatabase(companyDomain); // Connect to the company database
+    const connection = await connectToCompanyDatabase(companyDomain); // Use db.js for the connection
+
     const JewelMaster = getJewelMasterModel(connection);
     const newItem = new JewelMaster(req.body);
     await newItem.save();
@@ -45,7 +47,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const companyDomain = req.user.companyDomain;
-    const connection = await connectToCompanyDatabase(companyDomain); // Connect to the company database
+    const connection = await connectToCompanyDatabase(companyDomain); // Use db.js for the connection
 
     const JewelMaster = getJewelMasterModel(connection);
     const updatedItem = await JewelMaster.findByIdAndUpdate(req.params.id, req.body, { new: true });
@@ -63,7 +65,7 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const companyDomain = req.user.companyDomain;
-    const connection = await connectToCompanyDatabase(companyDomain); // Connect to the company database
+    const connection = await connectToCompanyDatabase(companyDomain); // Use db.js for the connection
 
     const JewelMaster = getJewelMasterModel(connection);
     const deletedItem = await JewelMaster.findByIdAndDelete(req.params.id);

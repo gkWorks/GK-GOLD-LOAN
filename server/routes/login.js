@@ -119,7 +119,7 @@ router.post('/', async (req, res) => {
         const token = jwt.sign(
           { username, userType: 'company', companyDomain },
           process.env.JWT_SECRET,
-          { expiresIn: '1h' }
+          { expiresIn: '12h' }
         );
 
         return res.status(200).json({ message: 'Company login successful', token, userType: 'company' });
@@ -156,7 +156,7 @@ router.post('/', async (req, res) => {
       const token = jwt.sign(
         { username, userType: 'branch', companyDomain },
         process.env.JWT_SECRET,
-        { expiresIn: '1h' }
+        { expiresIn: '12h' }
       );
 
       return res.status(200).json({ message: 'Branch login successful', token, userType: 'branch' });

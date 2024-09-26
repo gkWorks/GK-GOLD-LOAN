@@ -7,40 +7,43 @@ const documentRoutes = require('./routes/masterroutes/documentRoutes');
 const customerRoutes = require('./routes/customersroutes/customers');
 const jewelMasterRoute = require('./routes/jewelMaster'); // Import the JewelMaster route
 
-
-dotenv.config();
+dotenv.config(); // Load environment variables
 
 const app = express();
 
 // CORS configuration
 app.use(cors({
-  origin: process.env.CORS_ORIGIN, // Allow requests from this origin
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Specify the methods allowed
-  allowedHeaders: ['Content-Type', 'Authorization'], // Specify allowed headers
-  credentials: true, // Allow credentials if necessary
+  origin: process.env.CORS_ORIGIN, // Allow requests from this origin (specified in .env)
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allowed methods
+  allowedHeaders: ['Content-Type', 'Authorization'], // Allowed headers
+  credentials: true, // Allow credentials if necessary (cookies, etc.)
 }));
 
-// Increase the limit for incoming request bodies
+// Increase the limit for incoming request bodies (e.g., large file uploads)
 app.use(express.json({ limit: '50mb' })); // Adjust the limit as needed
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5000; // Use the port specified in .env or default to 5000
 
 // MongoDB connection
+console.log('Connecting to MongoDB...');
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
-.then(() => console.log('MongoDB connected'))
-.catch(err => console.error('MongoDB connection error:', err));
+  .then(() => console.log('MongoDB connected successfully'))
+  .catch(err => {
+    console.error('MongoDB connection error:', err);
+    process.exit(1);  // Exit the app if the DB connection fails
+  });
 
-// Routes
-app.use('/login', loginRoute);
-app.use('/api', documentRoutes);
-app.use('/api/customers', customerRoutes);
-app.use('/jewel-master', jewelMasterRoute); // Use the JewelMaster route
+// Routes setup
+console.log('Setting up routes...');
+app.use('/login', loginRoute); // Authentication route
+app.use('/api', documentRoutes); // Document routes
+app.use('/api/customers', customerRoutes); // Customer routes
+app.use('/jewel-master', jewelMasterRoute); // JewelMaster routes
 
-
-// Error handling middleware
+// Error handler middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).send('Something broke!');
@@ -48,5 +51,5 @@ app.use((err, req, res, next) => {
 
 // Start the server
 app.listen(PORT, () => {
-  console.log(`Server is now running on port ${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 });
