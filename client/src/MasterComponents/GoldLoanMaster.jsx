@@ -256,26 +256,38 @@ const GoldLoanMaster = () => {
              <div className="grid grid-cols-2 gap-6 mb-4">
               <div className="flex items-center">
               <div className="w-full">
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="Days Option Type">
-                Days Option Type
-                </label>
-                <select
-                  id="daysOption"
-                  name="daysOption"
-                  value={formData.daysOption}
-                  onChange={handleChange}
-                  className="shadow border border-gray-300 rounded w-72 py-2 px-3 text-gray-700 bg-gray-100"
-                  >
-                    <option value="Custom">Custom</option>
-                    <option value="fixed">Actual Days</option>
-                    <option value="flexible">.25 Monthly</option>
-                  </select>
-              <button
-                type="button"
-                className="bg-gray-300 text-gray-700 px-2 py-1 rounded hover:bg-gray-400 ml-3"
-              >
-                ...
-              </button>
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="goldRate">
+                Gold Rate
+              </label>
+              <input
+                id="goldRate"
+                name="goldRate"
+                type="number"
+                value={formData.goldRate}
+                onChange={handleChange}
+                className="shadow border border-gray-300 rounded w-full py-2 px-3 text-gray-700 bg-gray-100"
+                placeholder="Enter Gold Rate"
+              />
+              
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-6 mb-4">
+              <div className="flex items-center">
+              <div className="w-full">
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="minWeight">
+                Minimum Weight
+              </label>
+              <input
+                id="minWeight"
+                name="minWeight"
+                type="number"
+                value={formData.minWeight}
+                onChange={handleChange}
+                className="shadow border border-gray-300 rounded w-full py-2 px-3 text-gray-700 bg-gray-100"
+                placeholder="Enter Minimum Weight"
+              />
+              
                 </div>
               </div>
             </div>
