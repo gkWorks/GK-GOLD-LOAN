@@ -7,7 +7,7 @@ const GoldLoanMaster = () => {
     loanName: '',
     interestRate: '',
     maxDays: '',
-    slabs: [],
+    interestslabs: [],
     slabImplementationDate: [],
     interestType: [],
     daysOption: 'Custom'
@@ -58,7 +58,7 @@ const GoldLoanMaster = () => {
 
     setFormData((prevData) => ({
       ...prevData,
-      slabs: [...prevData.slabs, newSlab],
+      interestslabs: [...prevData.interestslabs, newSlab],
       slabImplementationDate: [...prevData.slabImplementationDate, selectedDate]
     }));
 
@@ -234,8 +234,8 @@ const GoldLoanMaster = () => {
                   {/* Display Added Slabs */}
                   <div className="mt-5">
                     <h2 className="text-xl font-semibold mb-3">Added Interest Slabs</h2>
-                    {formData.slabs.length > 0 ? (
-                      formData.slabs.map((slab, index) => (
+                    {formData.interestslabs.length > 0 ? (
+                      formData.interestslabs.map((slab, index) => (
                         <div
                           key={index}
                           className="bg-gray-100 p-3 border rounded-md mb-2 shadow-sm"

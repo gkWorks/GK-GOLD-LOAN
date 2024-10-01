@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const GoldLoanSchema = new mongoose.Schema({
   loanName: { type: String },
   interestRate: { type: Number }, // Set interestRate as required here
-  slabs: [
+  interestslabs: [
     {
      
       slabImplementationDate: { type: String },
