@@ -7,6 +7,7 @@ const documentRoutes = require('./routes/masterroutes/documentRoutes');
 const customerRoutes = require('./routes/customersroutes/customers');
 const jewelMasterRoute = require('./routes/jewelMaster'); // Import the JewelMaster route
 
+
 dotenv.config(); // Load environment variables
 
 const app = express();
@@ -42,6 +43,7 @@ app.use('/login', loginRoute); // Authentication route
 app.use('/api', documentRoutes); // Document routes
 app.use('/api/customers', customerRoutes); // Customer routes
 app.use('/jewel-master', jewelMasterRoute); // JewelMaster routes
+
 
 // Error handler middleware
 app.use((err, req, res, next) => {

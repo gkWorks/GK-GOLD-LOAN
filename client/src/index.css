@@ -49,3 +49,19 @@
     animation-duration: 8s;
   }
   
+  .relative {
+    position: relative;
+  }
+  
+  .dropdown-right {
+    position: absolute;
+    top: 100%; /* Position it below the input field */
+    left: 100%; /* Position it to the right of the input field */
+    width: 200px; /* Set a specific width */
+    background-color: white;
+    border: 1px solid #ccc;
+    z-index: 10; /* Make sure it stays on top */
+    max-height: 200px; /* Limit the height */
+    overflow-y: auto; /* Add scrolling if the list is too long */
+  }
+  

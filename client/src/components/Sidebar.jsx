@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { FaTachometerAlt, FaBox, FaUser, FaMoneyBill, FaSignOutAlt } from 'react-icons/fa';
+import { FaTachometerAlt, FaBox, FaUser, FaMoneyBill, FaSignOutAlt, FaWpforms   } from 'react-icons/fa';
 import Smartlogo from '../assets/smartFinance.png';
 
 const Sidebar = () => {
@@ -69,6 +69,18 @@ const Sidebar = () => {
             <span className="text-lg font-semibold">Gold Loan</span>
           </NavLink>
         </li>
+        <li>
+          <NavLink
+            to="/jewel-loan"
+            className={({ isActive }) =>
+              `flex items-center p-3 rounded-lg transition duration-300 ${isActive ? 'bg-blue-700' : 'hover:bg-blue-700'}`
+            }
+          >
+            <FaWpforms  className="mr-3 text-xl" />
+            <span className="text-lg font-semibold">Jewel Loan Form</span>
+          </NavLink>
+        </li>
+       
         {/* Logout Button */}
         <li>
           <button

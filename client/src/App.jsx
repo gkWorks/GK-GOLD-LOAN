@@ -13,6 +13,8 @@ import RePledgers from './MasterComponents/RePledgers';
 import Customers from './pages/Coustomers';
 import GoldLoan from './pages/GoldLoan';
 import Login from './components/Login';
+import CustomerSerch from './components/CustomerSerch';
+import JewelLoan from './pages/JewelLoan';
 
 const App = () => {
   return (
@@ -32,7 +34,9 @@ const App = () => {
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/master" element={<Master />} />
                   <Route path="/customers" element={<Customers />} />
+                  <Route path="/CustomerSerch" element={<CustomerSerch />} />
                   <Route path="/gold-loan" element={<GoldLoan />} />
+                  <Route path="/jewel-loan" element={<JewelLoan />} />
                   <Route path="/jewel-master" element={<JewelMaster />} />
                   <Route path="/supporting-documents" element={<SupportingDocuments />} />
                   <Route path="/gold-loan-master" element={<GoldLoanMaster />} />

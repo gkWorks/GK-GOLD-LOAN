@@ -66,7 +66,6 @@ router.delete('/:id', async (req, res) => {
   try {
     const companyDomain = req.user.companyDomain;
     const connection = await connectToCompanyDatabase(companyDomain); // Use db.js for the connection
-
     const JewelMaster = getJewelMasterModel(connection);
     const deletedItem = await JewelMaster.findByIdAndDelete(req.params.id);
     if (!deletedItem) {
