@@ -4,8 +4,10 @@ import Webcam from "react-webcam";
 
 const JewelLoan = () => {
   const token = localStorage.getItem("authToken");
+  const [loanNames, setLoanNames] = useState([]);
   console.log("Token being sent:", token); // Debug token
-
+  const [loanTypes, setLoanTypes] = useState([]); // State to hold loan types
+  const [selectedLoanType, setSelectedLoanType] = useState(""); // State for selected loan type
   const [todayDate, setTodayDate] = useState("");
   const [custId, setCustId] = useState("");
   const [customerData, setCustomerData] = useState({
@@ -30,6 +32,7 @@ const JewelLoan = () => {
   const [jewelItems, setJewelItems] = useState([]);
   const [showCamera, setShowCamera] = useState(false);
   const [capturedImage, setCapturedImage] = useState(null);
+  const [goldRate, setGoldRate] = useState(""); // New state for Gold Rate
 
   const webcamRef = useRef(null); // Using useRef to persist the webcam reference
 
@@ -101,6 +104,13 @@ const JewelLoan = () => {
     }, 0);
   };
 
+   // New function to calculate Max Loan Availed
+   const calculateMaxLoanAvailed = () => {
+    const netTotalWeight = calculateNetTotal();
+    const rate = parseFloat(goldRate) || 0;
+    return (netTotalWeight * rate).toFixed(2); // Max Loan Availed
+  };
+
   const handleSearchCustomer = async () => {
     console.log(`Searching for Customer ID: ${custId}`);
     try {
@@ -155,6 +165,24 @@ const JewelLoan = () => {
     }
   };
 
+  // Fetch loan types from the backend
+  useEffect(() => {
+    const fetchLoanNames = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost:5000/api/gold-loans/names",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        setLoanNames(response.data.map((loan) => loan.loanName));
+      } catch (error) {
+        console.error("Error fetching loan names:", error);
+      }
+    };
+    fetchLoanNames();
+  }, [token]);
+
   return (
     <div>
       <h1 className="text-2xl font-bold mb-1 -mt-5 flex items-center justify-center ">
@@ -206,11 +234,16 @@ const JewelLoan = () => {
           </div>
           <div className="flex items-center space-x-2">
             <label className="font-medium">Loan Type:</label>
-            <input
-              type="text"
-              placeholder="Search Loan Type"
-              className="border border-gray-300 p-2 rounded text-black"
-            />
+            <select className="border border-gray-300 p-2 rounded text-black">
+              <option value="" disabled>
+                Select Loan Type
+              </option>
+              {loanNames.map((loanName, index) => (
+                <option key={index} value={loanName}>
+                  {loanName}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
       </div>
@@ -248,6 +281,61 @@ const JewelLoan = () => {
             />
           </div>
         </div>
+
+        {/* New fields */}
+        <div className="flex flex-col space-y-4 w-1/2 ml-8">
+          <div className="flex items-center">
+            <div>
+              <label className="font-medium w-16 ">Max Days:</label>
+              <input
+                type="text"
+                placeholder="Max Days"
+                className="border border-gray-400 p-2 rounded w-20"
+                maxLength="3"
+              />
+            </div>
+            <div className="ml-10">
+              <label className="font-medium">Due Day:</label>
+              <input
+                type="date"
+                placeholder="Due Day"
+                className="border border-gray-400 p-2 rounded ml-2"
+                maxLength="3"
+              />
+            </div>
+          </div>
+          <div className="flex items-center">
+            <div>
+              <label className="font-medium w-16">Gold Rate:</label>
+              <input
+                type="text"
+                placeholder="Gold Rate"
+                value={goldRate}
+                onChange={(e) => setGoldRate(e.target.value)}
+                className="border border-gray-400 p-2 rounded w-24"
+                maxLength="4"
+              />
+            </div>
+            <div className="ml-6">
+              <label className="font-medium ">Min. Wt:</label>
+              <input
+                type="text"
+                placeholder="Min Wt"
+                className="border border-gray-400 p-2 rounded w-20 ml-3"
+                maxLength="4"
+              />
+            </div>
+          </div>
+          <div className="flex items-center">
+            <label className="font-medium w-16">Interest:</label>
+            <textarea
+              rows="4"
+              placeholder="Interest"
+              className="border border-gray-400 p-2 rounded w-52 resize-none"
+            />
+          </div>
+        </div>
+
         <div className="bg-gray-500 text-white flex items-center justify-center rounded w-40 h-40 ml-8 shadow-md">
           {customerData.image ? (
             <img
@@ -409,8 +497,6 @@ const JewelLoan = () => {
                       />
                     </td>
 
-                    
-
                     <td className="border border-gray-300 p-2">
                       {(
                         parseFloat(item.grWt || 0) -
@@ -526,8 +612,9 @@ const JewelLoan = () => {
           />
         </div>
         <div className="flex  items-center  mb-2  ml-48">
-          <label className="font-medium">Max Loan Availed:</label>
+        <strong>Max Loan Availed:</strong> 
           <input
+           value={calculateMaxLoanAvailed()}
             type="text"
             placeholder="Max loan availed"
             className="border border-gray-300 rounded w-52 text-black ml-1"

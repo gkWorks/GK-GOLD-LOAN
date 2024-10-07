@@ -41,13 +41,14 @@ router.get('/gold-loans/names', async (req, res) => {
     const GoldLoanModel = connection.model('GoldLoan', GoldLoan, 'GoldLoan');
 
     // Fetch only the loan names
-    const loanNames = await GoldLoanModel.find({}, 'loanName'); // Select only loanName field
+    const loanNames = await GoldLoanModel.find({}, 'loanName');
     res.status(200).json(loanNames);
   } catch (error) {
     console.error('Error fetching loan names:', error);
     res.status(500).json({ message: 'Error fetching loan names', error });
   }
 });
+
 
 
 module.exports = router;

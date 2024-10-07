@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { FaTrashAlt } from 'react-icons/fa';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { FaTrashAlt } from "react-icons/fa";
 
 const ConfirmationModal = ({ isOpen, onConfirm, onCancel }) => {
   if (!isOpen) return null;
@@ -30,7 +30,7 @@ const ConfirmationModal = ({ isOpen, onConfirm, onCancel }) => {
 };
 
 const SupportingDocuments = () => {
-  const [documentName, setDocumentName] = useState('');
+  const [documentName, setDocumentName] = useState("");
   const [documents, setDocuments] = useState([]);
   const [showPopup, setShowPopup] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -38,21 +38,25 @@ const SupportingDocuments = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState(null);
 
-  const token = localStorage.getItem('authToken'); // Get the token from localStorage
-  console.log('Token being sent:', token); // Debug token
+  const token = localStorage.getItem("authToken"); // Get the token from localStorage
+  console.log("Token being sent:", token); // Debug token
 
   useEffect(() => {
     // Fetch documents from backend when component mounts
     const fetchDocuments = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/documents', {
-          headers: {
-            'Authorization': `Bearer ${token}`,  // Add Authorization header
-          },
-        });
+        const response = await axios.get(
+          "http://localhost:5000/api/documents",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`, // Add Authorization header
+            },
+          }
+        );
+        console.log("Fetched documents:", response.data.documents); // Add this line
         setDocuments(response.data.documents);
       } catch (error) {
-        console.error('Error fetching documents:', error);
+        console.error("Error fetching documents:", error);
       }
     };
     fetchDocuments();
@@ -67,22 +71,23 @@ const SupportingDocuments = () => {
 
     if (trimmedDocumentName) {
       try {
-        const response = await axios.post('http://localhost:5000/api/register', 
-          { documentName: trimmedDocumentName }, 
+        const response = await axios.post(
+          "http://localhost:5000/api/register",
+          { documentName: trimmedDocumentName },
           {
             headers: {
-              'Authorization': `Bearer ${token}`,  // Add Authorization header
-            }
+              Authorization: `Bearer ${token}`, // Add Authorization header
+            },
           }
         );
-        const newDocument = response.data.document;
-        console.log('New document:', newDocument); // Debug line
-      setDocuments([...documents, response.data.document]); // Use the updater function for state
-        setDocumentName('');
+        const newDocument = response.data.document; // Now this should contain the saved document
+        console.log("New document:", newDocument); // Debug line
+        setDocuments((prevDocuments) => [...prevDocuments, newDocument]); // Use the updater function for state
+        setDocumentName("");
         setShowPopup(true);
         setTimeout(() => setShowPopup(false), 2000);
       } catch (error) {
-        console.error('Error registering document:', error);
+        console.error("Error registering document:", error);
       }
     }
   };
@@ -104,17 +109,22 @@ const SupportingDocuments = () => {
   const handleDelete = async () => {
     if (documentToDelete) {
       try {
-        await axios.delete(`http://localhost:5000/api/documents/${documentToDelete}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,  // Add Authorization header
-          },
-        });
+        await axios.delete(
+          `http://localhost:5000/api/documents/${documentToDelete}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`, // Add Authorization header
+            },
+          }
+        );
         // Update the state to remove the deleted document
-        setDocuments(documents.filter(doc => doc._id !== documentToDelete));
+        setDocuments((prevDocuments) =>
+          prevDocuments.filter((doc) => doc._id !== documentToDelete)
+        );
         setModalOpen(false);
         setDocumentToDelete(null);
       } catch (error) {
-        console.error('Error deleting document:', error);
+        console.error("Error deleting document:", error);
       }
     }
   };
@@ -122,7 +132,9 @@ const SupportingDocuments = () => {
   return (
     <div className="flex flex-col h-screen p-6">
       <div className="w-full">
-      <h1 className="text-2xl font-bold mb-6 text-center">Document Name Master</h1>
+        <h1 className="text-2xl font-bold mb-6 text-center">
+          Document Name Master
+        </h1>
       </div>
 
       {showPopup && (
@@ -140,30 +152,38 @@ const SupportingDocuments = () => {
       <div className="flex flex-1 flex-col justify-between items-center pb-20">
         <div className="space-y-10 w-full max-w-2xl">
           <div className="bg-blue-50 p-6 rounded-lg shadow-md border border-blue-500">
-            <h2 className="text-2xl font-bold mb-4 text-blue-600">Registered Documents</h2>
+            <h2 className="text-2xl font-bold mb-4 text-blue-600">
+              Registered Documents
+            </h2>
             <div className="space-y-2">
-
-            {documents.length > 0 ? (
-  documents.map((doc) => (
-    <div
-      key={doc._id || Math.random()} // Ensure a unique key even if _id is undefined
-      className={`py-2 px-4 bg-white rounded-md shadow-sm flex justify-between items-center transition-transform duration-500 w-full ${isEditing ? 'transform scale-105 translate-x-2' : ''}`}
-    >
-      <span className="break-all">{doc.documentName}</span>
-      {isEditing && (
-        <button
-          onClick={() => handleDeleteInitiate(doc._id)} // Initiate delete
-          className="text-red-500 hover:text-red-700 transition duration-300"
-        >
-          <FaTrashAlt />
-        </button>
-      )}
-    </div>
-  ))
-) : (
-  <div className="text-gray-500">No documents registered yet</div>
-)}
-
+              {documents.length > 0 ? (
+                documents.map((doc) => {
+                  // Check if doc is defined and has the documentName property
+                  if (doc && doc.documentName) {
+                    return (
+                      <div
+                        key={doc._id || Math.random()} // Ensure a unique key even if _id is undefined
+                        className={`py-2 px-4 bg-white rounded-md shadow-sm flex justify-between items-center transition-transform duration-500 w-full ${
+                          isEditing ? "transform scale-105 translate-x-2" : ""
+                        }`}
+                      >
+                        <span className="break-all">{doc.documentName}</span>
+                        {isEditing && (
+                          <button
+                            onClick={() => handleDeleteInitiate(doc._id)} // Initiate delete
+                            className="text-red-500 hover:text-red-700 transition duration-300"
+                          >
+                            <FaTrashAlt />
+                          </button>
+                        )}
+                      </div>
+                    );
+                  }
+                  return null; // Return null if doc is undefined or missing documentName
+                })
+              ) : (
+                <div className="text-gray-500">No documents registered yet</div>
+              )}
             </div>
           </div>
         </div>
@@ -177,11 +197,21 @@ const SupportingDocuments = () => {
             placeholder="Enter document name"
           />
           <div className="flex space-x-4 justify-center">
-            <button onClick={handleRegister} className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition duration-300">
+            <button
+              onClick={handleRegister}
+              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition duration-300"
+            >
               Register
             </button>
-            <button onClick={handleEdit} className={`px-4 py-2 rounded-lg transition duration-300 ${isEditing ? 'bg-red-500 hover:bg-red-600 text-white' : 'bg-green-500 hover:bg-green-600 text-white'}`}>
-              {isEditing ? 'Stop Editing' : 'Edit'}
+            <button
+              onClick={handleEdit}
+              className={`px-4 py-2 rounded-lg transition duration-300 ${
+                isEditing
+                  ? "bg-red-500 hover:bg-red-600 text-white"
+                  : "bg-green-500 hover:bg-green-600 text-white"
+              }`}
+            >
+              {isEditing ? "Stop Editing" : "Edit"}
             </button>
           </div>
         </div>

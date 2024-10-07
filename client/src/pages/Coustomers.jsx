@@ -9,7 +9,6 @@ import { GoChevronRight } from "react-icons/go";
 const Customers = () => {
 
   const location = useLocation(); // Get the state passed from the previous route
-
   const [documents, setDocuments] = useState([]);
   const [dob, setDob] = useState('');
   const [age, setAge] = useState('');
@@ -29,7 +28,6 @@ const Customers = () => {
     age: '',
     gender: '',
     address: '',
-    notes: '',
     mobileNo: '',
     email: '',
     aadhaarNo: '',
@@ -39,6 +37,8 @@ const Customers = () => {
     image: '',
   });
   const [nominees, setNominees] = useState([{ nominee: '', relation: '' }]); // State for dynamic nominees
+  const [searchResult, setSearchResult] = useState(null);
+
   
   //Navigation Search customer
   const navigate = useNavigate();
@@ -69,24 +69,37 @@ const Customers = () => {
   const handleDobChange = (e) => {
     const dobValue = e.target.value;
     setDob(dobValue);
+    
     if (dobValue) {
       const birthDate = new Date(dobValue);
       const today = new Date();
-      const calculatedAge = today.getFullYear() - birthDate.getFullYear();
-      // Adjust for if the birthday hasn't occurred yet this year
+      let calculatedAge = today.getFullYear() - birthDate.getFullYear();
+      
       if (
         today.getMonth() < birthDate.getMonth() ||
         (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate())
       ) {
-        setAge(calculatedAge - 1);
-      } else {
-        setAge(calculatedAge);
+        calculatedAge -= 1;
       }
+      
+      setAge(calculatedAge);
+  
+      // Update formData with dob and age
+      setFormData({
+        ...formData,
+        dob: dobValue,
+        age: calculatedAge
+      });
     } else {
       setAge('');
+      setFormData({
+        ...formData,
+        dob: '',
+        age: ''
+      });
     }
   };
-
+  
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -112,36 +125,61 @@ const Customers = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+  
+    // Ensure formData has the latest dob and age values
     const finalData = {
       ...formData,
       Date: formData.Date ? new Date(formData.Date).toISOString().split('T')[0] : '',
-      dob: dob ? new Date(dob).toISOString().split('T')[0] : '',
-      age: age,
-      image: capturedImage,
-      nominees: nominees,
+      dob: formData.dob ? new Date(formData.dob).toISOString().split('T')[0] : '',
+      age: formData.age,
+      image: capturedImage, // Make sure captureImage is set
+      nominees: nominees, // Ensure nominees are populated correctly
     };
-  
+    
+    
     try {
-      if (location.state?.customer) {
-        const customerId = location.state.customer.customerId; 
-        const response = await axios.put(`http://localhost:5000/api/customers/${customerId}`, finalData, {
+      let response;
+      
+       // Determine whether we're updating an existing customer or creating a new one
+    const customerId = location.state?.customer?.customerId || searchResult; // Get ID from search or location.state
+      
+      // Update existing customer or create a new customer
+      if (customerId) {
+        
+        response = await axios.put(`http://localhost:5000/api/customers/${customerId}`, finalData, {
           headers: {
-            'Authorization': `Bearer ${token}`
-          }
+            'Authorization': `Bearer ${token}`,
+          },
         });
       } else {
-        const response = await axios.post('http://localhost:5000/api/customers', finalData, {
+        response = await axios.post('http://localhost:5000/api/customers', finalData, {
           headers: {
-            'Authorization': `Bearer ${token}`
-          }
+            'Authorization': `Bearer ${token}`,
+          },
         });
       }
   
-      // Reset form after successful submission
-      resetForm();  // This function should be defined separately
-      navigate('/CustomerRegister'); // Redirect to new customer register
+      // Check for a successful response and reset the form
+      if (response.status >= 200 && response.status < 300) {
+        alert('Customer saved successfully!');
+        resetForm();  // Reset the form after successful submission
+
+            // Reload the page after successful save
+      window.location.reload();  // This will refresh the page
+      } else {
+        alert('Failed to save customer, please try again.');
+      }
     } catch (error) {
-      console.error('Error submitting the form:', error);
+      console.error('Error saving customer:', error);
+  
+      // Handle errors
+      if (error.response) {
+        alert(`Error: ${error.response.data.message || 'Something Went Wrong...'}`);
+      } else if (error.request) {
+        alert('No response from the server. Please try again.');
+      } else {
+        alert(`Error: ${error.message}`);
+      }
     }
   };
   
@@ -155,7 +193,6 @@ const Customers = () => {
       age: '',
       gender: '',
       address: '',
-      notes: '',
       mobileNo: '',
       email: '',
       aadhaarNo: '',
@@ -282,13 +319,9 @@ const handleCapture = () => {
   };
   
   const handleCancel = () => {
-    resetForm();
-    navigate('/customers'); // Navigate back to the new customer register
+    resetForm(); // Navigate back to the new customer register
   };
-  const handelRegister = () => {
-    resetForm();
-    navigate('/customers'); // Navigate back to the new customer register
-  };
+  
 
   //serch customerID
   const handleSearch = async () => {
@@ -296,7 +329,9 @@ const handleCapture = () => {
       alert('Please enter a Customer ID');
       return;
     }
-    console.log("Searching for Customer ID:", customerId); // Add this line for debugging
+  
+    console.log("Searching for Customer ID:", customerId);
+    
     try {
       const response = await axios.get(`http://localhost:5000/api/customers/customers/${customerId}`, {
         headers: {
@@ -307,8 +342,7 @@ const handleCapture = () => {
       // Check if a customer was found
       if (response.data) {
         const customer = response.data;
-  
-        // Set the form data with the fetched customer information
+        
         setFormData({
           Date: customer.Date ? new Date(customer.Date).toISOString().split('T')[0] : '',
           name: customer.name || '',
@@ -325,9 +359,13 @@ const handleCapture = () => {
           idproof: customer.idproof || '',
           image: customer.image || '',
         });
+  
         setCapturedImage(customer.image || null);
         setDob(customer.dob ? new Date(customer.dob).toISOString().split('T')[0] : '');
         setNominees(customer.nominees || [{ nominee: '', relation: '' }]);
+  
+        // Set searchResult to the fetched customer
+        setSearchResult(customer.customerId);
       } else {
         alert('No customer found with this ID');
       }
@@ -336,6 +374,7 @@ const handleCapture = () => {
       alert('Error fetching customer data. Please try again.');
     }
   };
+  
 
   return (
     
@@ -384,6 +423,7 @@ const handleCapture = () => {
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
+                placeholder="Name"
                 className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm"
               />
             </div>
@@ -398,7 +438,7 @@ const handleCapture = () => {
               />
             </div>
           </div>
-  
+          
             <div>
               <label className="block text-xs font-bold mb-1">Mobile No</label>
               <input
@@ -406,6 +446,7 @@ const handleCapture = () => {
                 name="mobileNo"
                 value={formData.mobileNo}
                 onChange={handleChange}
+                placeholder="Mobile Number"
                 className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm"
               />
             </div>
@@ -548,7 +589,6 @@ const handleCapture = () => {
             <FaPlus /> Add Nominee
           </button>
         </div>
-  
           <div>
             <label className="block text-xs font-bold mb-1">Address</label>
             <textarea
@@ -601,7 +641,7 @@ const handleCapture = () => {
           />
       <div className="flex space-x-2 pt-60 pl-80 p-2 mr-96">
         <button
-          type="cancel"
+          type="button"
           className="px-4 py-2 bg-red-500 text-white rounded shadow-md"
         onClick={handleCancel}>
           Cancel
@@ -609,7 +649,7 @@ const handleCapture = () => {
         </div>
         </div>
       </div>
-  
+      
       {/* Save and Close Buttons */}
       {/* Popup for camera capture */}
       {isPopupOpen && (
@@ -630,15 +670,15 @@ const handleCapture = () => {
                 onClick={closePopup}
                 className="px-3 py-1 bg-red-500 text-white rounded"
               >
-                Cancel
+                Cancel  
               </button>
             </div>
           </div>
         </div>
       )}
      <div className="mb-4">
-          <button type="submit" className="bg-green-500 text-white p-2" onClick={handelRegister}>
-            {location.state?.customer ? 'Update Customer' : 'Register Customer'}
+          <button type="submit" className="bg-green-500 text-white p-2" >
+            {location.state?.customer || searchResult ? 'Update Customer' : 'Register Customer'}
           </button>
         </div>
       </div>

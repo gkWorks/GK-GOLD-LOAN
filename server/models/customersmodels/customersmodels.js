@@ -8,15 +8,16 @@ const nomineeSchema = new mongoose.Schema({
 
 // Define the main customer schema
 const customerSchema = new mongoose.Schema({
-  customerId: { type: Number, unique: true }, // Unique customerId
+  companyId: { type: String, required: true }, // Store companyId with each item
+  customerId: { type: Number, required: true }, // Unique customerId
   Date: { type: Date, default: Date.now },
-  name: { type: String, required: true },
+  name: { type: String, required: true},
   spouse: { type: String },
   dob: { type: Date },
   age: { type: Number },
   gender: { type: String },
-  address: { type: String }, 
-  mobileNo: { type: String, required: true },
+  address: { type: String, required: true }, 
+  mobileNo: { type: String },
   email: { type: String },
   aadhaarNo: { type: String },
   panNo: { type: String },
@@ -25,5 +26,8 @@ const customerSchema = new mongoose.Schema({
   image: { type: String }, // Will store the image as a base64 string
   nominees: [nomineeSchema] // Embeds the nominees schema
 });
+
+// Create a compound index on companyId and customerId
+customerSchema.index({ companyId: 1, customerId: 1 }, { unique: true });
 
 module.exports = customerSchema;

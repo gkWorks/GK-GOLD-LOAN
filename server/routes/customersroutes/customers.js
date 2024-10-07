@@ -1,99 +1,114 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const authenticateToken = require('../../middleware/auth');
 const customerSchema = require('../../models/customersmodels/customersmodels');
-const { connectToCompanyDatabase } = require('../../DataBase/db'); // Reference the separate db file
 
 // Middleware to authenticate token
 router.use(authenticateToken);
 
-// Helper function to get Customer model on the specific company connection
-function getCustomerModel(connection) {
-  return connection.model('Customers', customerSchema, 'Customers');
-}
+// Connect to the "Company-Loan" database once
+const dbUri = 'mongodb+srv://akash19082001:akash19082001@atlascluster.hsvvs.mongodb.net/Company-Loan';
+mongoose.connect(dbUri, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
+
+// Create Customers model for "Company-Loan" database
+const CustomersReg = mongoose.model('CustomerREG', customerSchema, 'CustomerREG');
 
 router.post('/', async (req, res) => {
+  console.log(req.body);  // Debugging: Log the incoming request data
   try {
-    const companyDomain = req.user?.companyDomain; // Ensure req.user exists
-    if (!companyDomain) {
-      return res.status(400).json({ message: 'Company domain not found in token' });
+    const companyId = req.user.companyId; // Retrieve the companyId from the token
+
+    // Log the companyId for debugging
+    console.log('Company ID:', companyId);
+
+    // Fetch the latest customer for this company to determine the next customerId
+    const latestCustomer = await CustomersReg.findOne({ companyId }).sort({ customerId: -1 });
+    let nextCustomerId = latestCustomer ? latestCustomer.customerId + 1 : 1;
+
+    // Check for existing customerId and find a unique one
+    const existingCustomer = await CustomersReg.findOne({ companyId, customerId: nextCustomerId });
+    while (existingCustomer) {
+      nextCustomerId++; // Increment to find a new ID
+      existingCustomer = await CustomersReg.findOne({ companyId, customerId: nextCustomerId });
     }
 
-    // Use the connectToCompanyDatabase function from the separate db.js file
-    const connection = await connectToCompanyDatabase(companyDomain);
+    // Create the new customer data with the unique customerId
+    const newCustomer = new CustomersReg({
+      ...req.body,
+      customerId: nextCustomerId, // Set the generated customerId
+      companyId, // Add companyId to the new item
+    });
 
-    const Customers = getCustomerModel(connection);
-    
-    // Assuming you're receiving the customer data as req.body.finalData
-    const customerData = req.body.finalData || req.body; // Support both formats
+    // log the new customer data before saving it in new database
+    console.log('New Customer:', newCustomer);
 
-    // Fetch the latest customer to determine the next customerId
-    const latestCustomer = await Customers.findOne().sort({ customerId: -1 });
-    const nextCustomerId = latestCustomer ? latestCustomer.customerId + 1 : 1;
-
-    // Add the customerId to the customer data
-    customerData.customerId = nextCustomerId;
-    
-    const newCustomer = new Customers(customerData);
     await newCustomer.save();
-    
     res.status(201).json(newCustomer);
     
   } catch (error) {
+    if (error.code === 11000) {
+      // Handle duplicate key error
+      return res.status(409).json({ message: 'Duplicate customerId found for this company', error });
+    }
     console.error('Error creating customer:', error);
     res.status(500).json({ message: 'Error creating customer', error });
   }
 });
 
-// routes/customers.js
+
+// GET route for searching customers
 router.get('/CustomerSerch', authenticateToken, async (req, res) => {
   try {
-    const { name, aadhaarNo, mobileNo } = req.query; // Get query params from request
-    const companyDomain = req.user.companyDomain;
-    const connection = await connectToCompanyDatabase(companyDomain);
 
-    const Customers = getCustomerModel(connection);
-
-    // Build search query dynamically
-    const query = {};
-    if (name) query.name = new RegExp(name, 'i'); // Case-insensitive search
-    if (aadhaarNo) query.aadhaarNo = aadhaarNo;
-    if (mobileNo) query.mobileNo = mobileNo;
     
+    const companyId = req.user.companyId; // Retrieve the companyId from the token
 
-    // Fetch filtered customers based on the query
-    const customers = await Customers.find(query);
-    
+    const customers = await CustomersReg.find({ companyId }); // Fetch items by companyId
     res.json(customers);
   } catch (error) {
-    console.error('Error searching customers:', error);
-    res.status(500).json({ message: 'Error searching customers', error });
+    console.error('Error searching Customers:', error);
+    res.status(500).json({ message: 'Error Searching Customers', error });
+  }
+});
+
+// GET route for fetching a customer by ID
+router.get('/customers/:customerId', authenticateToken, async (req, res) => {
+  try {
+    const companyId = req.user.companyId; // Retrieve the companyId from the token
+    const customerId = parseInt(req.params.customerId); // Get customerId from the request URL
+
+    // Find the customer by customerId
+    const customer = await CustomersReg.findOne({ customerId: customerId, companyId: companyId  });
+    if (!customer) {
+      return res.status(404).json({ message: 'Customer not found' });
+    }
+    res.json(customer);
+  } catch (error) {
+    console.error('Error fetching customers', error);
+    res.status(500).json({ message: 'Error fetching customer', error });
   }
 });
 
 // PUT route for updating a customer
 router.put('/:customerId', authenticateToken, async (req, res) => {
   try {
-    const companyDomain = req.user?.companyDomain;
-    if (!companyDomain) {
-      return res.status(400).json({ message: 'Company domain not found in token' });
-    }
-
-    const connection = await connectToCompanyDatabase(companyDomain);
-    const Customers = getCustomerModel(connection);
-
-    const customerId = req.params.customerId; // Get customerId from the request URL
+    const companyId = req.user.companyId; // Retrieve the companyId from the token
+    const customerId = parseInt(req.params.customerId); // Ensure customerId is parsed as an integer
     const updateData = req.body; // Customer data to update
 
-    // Find the customer by customerId and update
-    const updatedCustomer = await Customers.findOneAndUpdate(
-      { customerId: customerId }, // Search condition
+    // Find the customer by customerId and companyId to update
+    const updatedCustomer = await CustomersReg.findOneAndUpdate(
+      { customerId: customerId, companyId: companyId }, // Search condition
       updateData, // Data to update
       { new: true } // Return the updated customer
     );
 
     if (!updatedCustomer) {
-      return res.status(404).json({ message: 'Customer not found' });
+      return res.status(404).json({ message: 'Customer not found in this company.' });
     }
 
     res.json(updatedCustomer);
@@ -102,30 +117,5 @@ router.put('/:customerId', authenticateToken, async (req, res) => {
     res.status(500).json({ message: 'Error updating customer', error });
   }
 });
-
-// GET route for fetching a customer by ID
-router.get('/customers/:customerId', authenticateToken, async (req, res) => {
-  try {
-    const companyDomain = req.user?.companyDomain;
-    if (!companyDomain) {
-      return res.status(400).json({ message: 'Company domain not found in token' });
-    }
-    const connection = await connectToCompanyDatabase(companyDomain);
-    const Customers = getCustomerModel(connection);
-
-    const customerId = req.params.customerId; // Get customerId from the request URL
-
-    // Find the customer by customerId
-    const customer = await Customers.findOne({ customerId: customerId });
-    if (!customer) {
-      return res.status(404).json({ message: 'Customer not found' });
-    }
-    res.json(customer);
-  } catch (error) {
-    console.error('Error fetching customer:', error);
-    res.status(500).json({ message: 'Error fetching customer', error });
-  }
-});
-
 
 module.exports = router;

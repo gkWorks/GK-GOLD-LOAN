@@ -96,7 +96,6 @@ const GoldLoanMaster = () => {
         console.error('Error fetching loan names:', error);
       }
     };
-
     fetchLoanNames();
   }, [token]);
 

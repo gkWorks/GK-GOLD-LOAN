@@ -37,16 +37,18 @@ const JewelMaster = () => {
 
   const handleAddItem = async () => {
     const trimmedNewItem = newItem.trim();
-
+  
     if (trimmedNewItem) {
       const normalizedItems = items.map(item => item.itemName.toLowerCase());
       const normalizedNewItem = trimmedNewItem.toLowerCase();
-
+  
       if (normalizedItems.includes(normalizedNewItem)) {
         alert('Item already exists in the list!');
       } else {
         try {
-          const response = await axios.post('http://localhost:5000/jewel-master', { itemName: trimmedNewItem }, {
+          const response = await axios.post('http://localhost:5000/jewel-master', 
+          { itemName: trimmedNewItem }, 
+          {
             headers: {
               'Authorization': `Bearer ${token}`
             }
@@ -60,6 +62,7 @@ const JewelMaster = () => {
       }
     }
   };
+  
 
   const handleRemoveItem = async () => {
     if (confirmInput.trim().toLowerCase() === itemToRemove.itemName.toLowerCase()) {
