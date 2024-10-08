@@ -64,4 +64,24 @@
     max-height: 200px; /* Limit the height */
     overflow-y: auto; /* Add scrolling if the list is too long */
   }
+  .disclaimer-container {
+    overflow: hidden;
+    white-space: nowrap;
+  }
   
+  .disclaimer-text {
+    display: inline-block;
+    animation: moveRightToLeft 8s linear infinite;
+    color: red;
+    font-weight: bold;
+  }
+  
+  @keyframes moveRightToLeft {
+    0% {
+      transform: translateX(100%);
+    }
+    100% {
+      transform: translateX(-100%);
+    }
+  }
+ 

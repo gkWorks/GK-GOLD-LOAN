@@ -1,7 +1,8 @@
 // models/GoldLoan.js
 const mongoose = require('mongoose');
 
-const GoldLoanSchema = new mongoose.Schema({
+const GoldLoanSchema = new mongoose.Schema({ 
+  companyId: { type : String },
   loanName: { type: String },
   interestRate: { type: Number }, // Set interestRate as required here
   interestslabs: [
